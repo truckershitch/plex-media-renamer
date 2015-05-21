@@ -52,7 +52,7 @@ my $FileBotCmd = "java -jar /home/truckershitch/bin/FileBot.jar";
 # Create inotify object
 my $inotify = Linux::Inotify2->new or die "unable to create new inotify object: $!";
 
-sub FileBotMagic { # Remove stale symlinks and create new ones with FileBot for PLEX
+sub FileBotMagic { # Create new symlinks with FileBot for PLEX
     my $escaped = quotemeta(@_[0]); # escape out evil characters
     if ($mediaType eq 'tv') { # tv
         system($FileBotCmd . " -rename " . $escaped . " --action symlink --output " . $plexDir
@@ -61,10 +61,11 @@ sub FileBotMagic { # Remove stale symlinks and create new ones with FileBot for 
     else { # movies
         system($FileBotCmd . " -rename " . $escaped . " --action symlink --output " . $plexDir
                . " --db TheMovieDB --format \"Movies/{n} ({y})\" -non-strict -r");
-    }
+    }    #NB: removed -non-strict command-line option from both lines above
+
 }
 
-sub GetNewName { # return new full path of file/directory
+sub GetNewName { # return new full path of file/directory because event->fullname has old name
     my $oldname = @_[0];
     my $slashdex = rindex $oldname, '/'; # index of rightmost forward slash
     my $basepath = substr $oldname, 0, $slashdex + 1;
@@ -120,7 +121,7 @@ while () {
             FileBotMagic($event->fullname);
         }
 
-        elsif (($event->IN_ISDIR) && (($event->IN_MOVED_FROM) || ($event->IN_MOVED_TO))) { # renamed directory
+        elsif (($event->IN_ISDIR) && ($event->IN_MOVED_TO)) { # renamed directory
             # Getting double hits -- one is IN_ISDIR && IN_MOVED_FROM and one is IN_ISDIR && IN_MOVED_TO
             if ($dir_rename_count++ == 1) {
                 print "Renamed directory -- add new watch.\n";
@@ -134,14 +135,20 @@ while () {
             }
         }
 
-        elsif (($event->IN_CREATE) || ($event->IN_MOVED_FROM) || ($event->IN_MOVED_TO)) { # file/dir has moved/changed
-            # This is hitting twice for a rename. Should it just be moved_to?
-            RemoveStaleSymlinks();
+        elsif (($event->IN_CREATE)) { # file has been created
             FileBotMagic($event->fullname);
         }
 
-        elsif (($event->IN_DELETE)) { # file/dir has been deleted
+        elsif (($event->IN_MOVED_TO)) { # file has moved/changed
+            RemoveStaleSymlinks(); # might not need this
+            FileBotMagic($event->fullname);
+        }
+
+        elsif (($event->IN_DELETE) || ($event->IN_MOVED_FROM)) { # file/dir has been deleted/moved from
+            #if (($event->IN_ISDIR)) {
+            #    $event->w->cancel; # trying to just remove one watch removes entire object 
+            #}
             RemoveStaleSymlinks();
         }              
-  }
+    }
 }
