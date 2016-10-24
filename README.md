@@ -10,15 +10,15 @@ Linux::Inotify2 -- http://search.cpan.org/~mlehmann/Linux-Inotify2-1.22/Inotify2
 
 Please edit the paths at the top of the script to reflect your media paths.  I have combined television and music into one script, as I only have one directory for each type and redundancy seemed silly.  You could run more than one instance, I suppose.  This could be addressed with command-line options, but for my purposes I have not found it necessary to.<br>
 
-You can run the file from rc.local like this:<br>
+You can run the file from <b>rc.local</b> like this:<br>
 
 ```
 su - truckershitch -c '/home/truckershitch/bin/monitor_media.pl tv' &> /home/truckershitch/monitor_tv_media.log &
 su - truckershitch -c '/home/truckershitch/bin/monitor_media.pl movies' &> /home/truckershitch/monitor_movies_media.log &
 ```
 
-Or add a unit file for systemd, i.e. /etc/systemd/system/monitor_tv_media.service.  A separate unit will be needed for each media type.  An example is below.<br>
-Enable with: systemctl enable monitor_tv_media.service<br>
+Or add a unit file for systemd, i.e. <b>/etc/systemd/system/monitor_tv_media.service</b>.  A separate unit will be needed for each media type.  An example is below.<br>
+Enable with: <b>systemctl enable monitor_tv_media.service</b><br>
 
 ```
 [Unit]
