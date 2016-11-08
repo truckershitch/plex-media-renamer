@@ -3,10 +3,13 @@ plex-media-renamer
 
 This Perl script watches television or movie directories for changes with Linux::Inotify2 and automatically creates Plex-friendly symlinks for Plex Media Server in Linux.  It will create Plex-friendly symlinks from your media using FileBot.  It will also update the links if the files are renamed or moved.  Finally, it will notify the user with the new files via email.<br>
 
-Requirements:
+<b>Requirements:</b><br>
 FileBot.jar - path is hard-coded in script<br>
 Java (best with official Oracle JRE for proper FileBot operation)<br>
 Linux::Inotify2 -- http://search.cpan.org/~mlehmann/Linux-Inotify2-1.22/Inotify2.pm<br>
+AnyEvent<br>
+File::Find<br>
+POSIX (may be used in future to daemonize script)<br>
 
 Please edit the paths at the top of the script to reflect your media paths.  I have combined television and music into one script, as I only have one directory for each type and redundancy seemed silly.  You could run more than one instance, I suppose.  This could be addressed with command-line options, but for my purposes I have not found it necessary to.<br>
 
