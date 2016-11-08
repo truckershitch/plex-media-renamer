@@ -30,7 +30,7 @@ Description=Monitor TV Media Perl Script
 [Service]
 Type=simple
 User=truckershitch
-ExecStart=/home/truckershitch/bin/monitor_media.pl tv &> /home/truckershitch/monitor_tv_media.log
+ExecStart=/home/truckershitch/bin/monitor_media.pl tv
 
 [Install]
 WantedBy=multi-user.target
