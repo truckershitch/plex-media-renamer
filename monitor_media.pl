@@ -8,7 +8,7 @@
 #
 # Usage: monitor_media.pl <movies|tv>
 #
-# Version 2.0 -- November 1, 2016
+# Version 2.1 -- January 11, 2017
 #
 # Inspired by a script created by Ryan Babchishin
 # Ryan Babchishin <rbabchishin@win2ix.ca>
@@ -51,7 +51,7 @@ if ($mediaType ne 'tv' && $mediaType ne 'movies') {
 
 my $scriptPath = "/home/truckershitch/bin/monitor_media.pl";
 
-my $mediaDir = ""; # initalze this to satisfy 'use strict'
+my $mediaDir = "";
 if ($mediaType eq 'tv') {
     $mediaDir = "/storage/videos/samba/TV";
 }
@@ -124,7 +124,8 @@ sub FileBotMagic { # Create new symlinks with FileBot for PLEX
     my @lines = split /\n/, $FileBotOutput;
     foreach my $line (@lines) {
         chomp($line);
-        if ($line =~ /^\[SYMLINK\].*\/(.*)\]/) {
+        if ($line =~ /^\[SYMLINK\].*\/(.*)\]/) { # extract filename, keep extension
+#        if ($line =~ /^\[SYMLINK\].*\/(.*)\..*\]/) { # extract filename, toss extension
             $newmail .= "$1\n";
         }
     }
@@ -147,14 +148,17 @@ sub ScanDirs {
 
 sub CreateWatcher {
     my ($inotify, $dir) = @_;
-    my $watcher = $inotify->watch($dir, IN_CREATE | IN_MOVE | IN_DELETE, sub {
+    my $watcher = $inotify->watch($dir, IN_CREATE | IN_CLOSE_WRITE | IN_MOVE | IN_DELETE, sub {
+    #added IN_CLOSE_WRITE event to catch events that were slipping through
         my $e = shift;
         my $filename  = $e->fullname;
 
         if(-d $filename) { # is directory
-            if ($e->IN_CREATE) {
+            if ($e->IN_CREATE | $e->IN_CLOSE_WRITE) {
                 print "New directory.  Adding watch for $filename\n";
                 CreateWatcher($inotify, $filename);
+                ScanDirs($filename);
+                FileBotMagic($filename);
                 return;
             }
             elsif($e->IN_MOVED_TO) {
@@ -166,7 +170,7 @@ sub CreateWatcher {
             }
         }
         elsif(-f $filename) { # is a file
-            if($e->IN_CREATE) {
+            if($e->IN_CREATE | $e->IN_CLOSE_WRITE) {
                 FileBotMagic($e->fullname);
             }
             elsif($e->IN_MOVED_TO) {
