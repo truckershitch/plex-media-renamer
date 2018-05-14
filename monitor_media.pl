@@ -1,25 +1,23 @@
 #!/usr/bin/perl
 #
 # monitor_media.pl
-#
+# 
 # Script using Inotify2 and Filebot to watch directories
 # and automatically create Plex-friendly symlinks for Plex Media Server
 # New in Version 1.1 - mail report of new files
-#
+# 
 # Usage: monitor_media.pl <movies|tv>
-#
-# Version 2.1 -- January 11, 2017
+# 
+# Version 2.1.1 -- January 11, 2017
 #
 # Inspired by a script created by Ryan Babchishin
 # Ryan Babchishin <rbabchishin@win2ix.ca>
 # http://www.win2ix.ca
 #
-# Refactored with tons of help from this page
+# Refactored with tons of help from this page 
 # https://jmorano.moretrix.com/2012/10/recursive-inotify-daemon/
 # This new version has better garbage collection.
 # Copyright 2012 Johnny Morano
-#
-# Copyright 2014-2016 truckershitch
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,17 +47,17 @@ if ($mediaType ne 'tv' && $mediaType ne 'movies') {
     die "Wrong media type.\n\nUsage: monitor_media.pl <media type>\nwhere <media type> is either tv or movies\n";
 }
 
-my $scriptPath = "/home/truckershitch/bin/monitor_media.pl";
+my $SCRIPT_PATH = "/home/truckershitch/bin/monitor_media.pl";
 
 my $mediaDir = "";
 if ($mediaType eq 'tv') {
-    $mediaDir = "/storage/videos/samba/TV";
+    $mediaDir = "/storage/samba/videos/TV";
 }
 else { #movies
-    $mediaDir = "/storage/videos/samba/Movies";
+    $mediaDir = "/storage/samba/videos/Movies";
 }
 
-my $plexDir = "/storage/videos/plex/";
+my $PLEX_DIR = "/storage/videos/plex/";
 
 my $FileBotCmd = "java -jar /home/truckershitch/bin/FileBot.jar";
 
@@ -84,17 +82,17 @@ $cv->recv;
 
 sub SendFYI { # Mail changes to recipient
     my $datestring = localtime();
-    my $to = 'you@wish.com';
-    my $from = 'root';
-    my $subject = 'Media Update';
+    my $TO = 'root';
+    my $FROM = 'root';
+    my $SUBJECT = 'Media Update';
     my $message = $_[0];
 
     open(MAIL, "|/usr/sbin/sendmail -t");
 
     # Email Header
-    print MAIL "To: $to\n";
-    print MAIL "From: $from\n";
-    print MAIL "Subject: $subject\n\n";
+    print MAIL "To: $TO\n";
+    print MAIL "From: $FROM\n";
+    print MAIL "Subject: $SUBJECT\n\n";
     # Email Body
     print MAIL "Local Time: " . "$datestring\n\n";
     print MAIL $message;
@@ -107,17 +105,17 @@ sub FileBotMagic { # Create new symlinks with FileBot for PLEX
     my $FileBotPrequel = " -rename " . $escaped . " --action symlink --output ";
     my $FileBotTVSuffix = " --db TheTVDB --format \"TV/{n}/Season {s}/{n} - {s00e00} - {t}\" -non-strict -r";
     my $FileBotMoviesSuffix = " --db TheMovieDB --format \"Movies/{n} ({y})\" -non-strict -r";
-    my $FileBotFullCmd = $FileBotCmd . $FileBotPrequel . $plexDir;
-
+    my $FileBotFullCmd = $FileBotCmd . $FileBotPrequel . $PLEX_DIR;
+    
     if ($mediaType eq 'tv') { # tv
         $FileBotFullCmd .= $FileBotTVSuffix;
     }
     else { # movies
         $FileBotFullCmd .= $FileBotMoviesSuffix;
     }
-
+    
     my $FileBotOutput = `$FileBotFullCmd`; # run FileBot and capture output
-
+    
     print $FileBotOutput; # send to STDOUT
 
     my $newmail = "";
@@ -136,14 +134,14 @@ sub FileBotMagic { # Create new symlinks with FileBot for PLEX
 }
 
 sub RemoveStaleSymlinks { # get rid of bogus symlinks
-    system("find -L " . $plexDir . " -type l -delete");
+    system("find -L " . $PLEX_DIR . " -type l -delete");
 }
 
 sub ScanDirs {
     my $topdir = $_[0];
     find({ wanted => sub { -d $_ && CreateWatcher($inotify, $File::Find::name) } } , $topdir);
     print "Scanned $topdir\n";
-}
+}                   
 
 
 sub CreateWatcher {
